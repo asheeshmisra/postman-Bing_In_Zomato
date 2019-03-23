@@ -1,0 +1,371 @@
+{
+	"info": {
+		"_postman_id": "4de504b4-fc64-4901-9b4d-e03d8bc5aa06",
+		"name": "Bing in Zomato",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Search for City",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": ""
+				},
+				"description": "We will query Zomato API to query city details (its ID and other values)."
+			},
+			"response": []
+		},
+		{
+			"name": "Bing in the Geocodes",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "89cecbf2-517d-4957-a2fd-28a60f40e634",
+						"exec": [
+							"/* To test that the status code of the request is 200 */",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"/* Create a const variable to store the response given by the request */",
+							"const jsonData = pm.response.json();",
+							"",
+							"/* Create a counter variable to store the size of resources array returned in the response */",
+							"const counter=jsonData.resourceSets[0].estimatedTotal;",
+							"",
+							"/* Create a variable to loop through the resources */",
+							"let i=0;",
+							"",
+							"/*Check if status code is 200 */",
+							"if(pm.response.to.have.status(200)){",
+							"    /* Loop over the response items */",
+							"    for(;i<counter;){",
+							"        /* Check for confidence value of the resource to be 'High' */",
+							"        if(jsonData.resourceSets[0].resources[i].confidence==='High'){",
+							"            /* Check for city value of the resource to be  'city' environment variable created in one of the previous requests*/",
+							"            if(jsonData.resourceSets[0].resources[i].address.locality===pm.environment.get('city')){",
+							"                /* store geo codes and exit the loop */",
+							"                pm.environment.set('latitude',jsonData.resourceSets[0].resources[i].point.coordinates[0]);",
+							"                pm.environment.set('longitude',jsonData.resourceSets[0].resources[i].point.coordinates[1]);",
+							"                break;",
+							"            }",
+							"        }",
+							"        /* increment the variable */",
+							"        i++;",
+							"    } /* for loop ends */",
+							"}",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://dev.virtualearth.net/REST/v1/Locations?q=Metacube Software Private Limited, Sitapura Industrial Area, {{city}}&key={{Bing Maps REST API Key}}",
+					"protocol": "http",
+					"host": [
+						"dev",
+						"virtualearth",
+						"net"
+					],
+					"path": [
+						"REST",
+						"v1",
+						"Locations"
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "Metacube Software Private Limited, Sitapura Industrial Area, {{city}}"
+						},
+						{
+							"key": "key",
+							"value": "{{Bing Maps REST API Key}}"
+						}
+					]
+				},
+				"description": "This request should fetch the geographical co-ordinates of the place being querie. \n\nTests should test of the Status code and save the coordinates in to environment variables."
+			},
+			"response": []
+		},
+		{
+			"name": "Search for Establishment Types",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3e3aa25a-f7b6-4b90-96dc-6e84e1b668ad",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"/* Create a const variable to store the response given by the request */",
+							"const jsonData = pm.response.json();",
+							"",
+							"/* Create a variable to loop through the resources */",
+							"let i=0;",
+							"",
+							"/* Check if the response code is 200 */",
+							"if(pm.response.to.have.status(200)){",
+							"    /* loop through all of the establishment types in the response */",
+							"    for(;i<jsonData.establishments.length;){",
+							"        /*Check if the name of the establishment type is 'Fine Dining' */",
+							"        if(jsonData.establishments[i].establishment.name==='Fine Dining'){",
+							"                /* Set an environment variable with the id of the establishment type and break from the loop */",
+							"                pm.environment.set('establishment_type_id',jsonData.establishments[i].establishment.id);",
+							"                break;",
+							"        }",
+							"        /* increment the counter */",
+							"        i++;",
+							"    } /* for loop ends */",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "user-key",
+						"value": "{{Zomato API Key}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://developers.zomato.com/api/v2.1/establishments?city_id={{city_id}}&lat={{latitude}}&lon={{longitude}}",
+					"protocol": "https",
+					"host": [
+						"developers",
+						"zomato",
+						"com"
+					],
+					"path": [
+						"api",
+						"v2.1",
+						"establishments"
+					],
+					"query": [
+						{
+							"key": "city_id",
+							"value": "{{city_id}}"
+						},
+						{
+							"key": "lat",
+							"value": "{{latitude}}"
+						},
+						{
+							"key": "lon",
+							"value": "{{longitude}}"
+						}
+					]
+				},
+				"description": "This request would search for restaurant types based on the city id, location coordinates provided by the user."
+			},
+			"response": []
+		},
+		{
+			"name": "Search for Cuisine",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "de28c395-0925-49eb-b2fe-5437c7b6b469",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"/* Create a const variable to store the response given by the request */",
+							"const jsonData = pm.response.json();",
+							"",
+							"/* Create a variable to loop through the resources */",
+							"let i=0;",
+							"",
+							"/* Check if the response code is 200 */",
+							"if(pm.response.to.have.status(200)){",
+							"    /* loop through all of the cuisines in the response */",
+							"    for(;i<jsonData.cuisines.length;){",
+							"        /*Check if the name of the cusisine's name is 'North Indian' */",
+							"        if(jsonData.cuisines[i].cuisine.cuisine_name==='North Indian'){",
+							"             /* Set an environment variable with the id of the cuisine and break from the loop */",
+							"            pm.environment.set('cuisine_id',jsonData.cuisines[i].cuisine.cuisine_id);",
+							"            break;",
+							"        }",
+							"        /* increment the counter */",
+							"        i++;",
+							"    } /* for loop ends */    ",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "user-key",
+						"value": "{{Zomato API Key}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://developers.zomato.com/api/v2.1/cuisines?city_id={{city_id}}&lat={{latitude}}&lon={{longitude}}",
+					"protocol": "https",
+					"host": [
+						"developers",
+						"zomato",
+						"com"
+					],
+					"path": [
+						"api",
+						"v2.1",
+						"cuisines"
+					],
+					"query": [
+						{
+							"key": "city_id",
+							"value": "{{city_id}}"
+						},
+						{
+							"key": "lat",
+							"value": "{{latitude}}"
+						},
+						{
+							"key": "lon",
+							"value": "{{longitude}}"
+						}
+					]
+				},
+				"description": "This request would hit Zomato API endpoint to fetch the cuisines availabe at the city (and its geo coordinates) specified as parameter."
+			},
+			"response": []
+		},
+		{
+			"name": "Search for restaurant",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "ae5b6cb0-3498-458c-85ba-71a5b54abe24",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"/* Create a const variable to store the response given by the request */",
+							"const jsonData = pm.response.json();",
+							"",
+							"/* generate a random number using lodash (internal library of postman) */",
+							"let randomNumber= _.random(0,5);",
+							"",
+							"/* Check if the response code is 200 */",
+							"if(pm.response.to.have.status(200)){",
+							"    /* Log the name of restaurant and its rating in the Console */",
+							"    console.log(`${jsonData.restaurants[randomNumber].restaurant.name} has a rating of ${jsonData.restaurants[randomNumber].restaurant.user_rating.aggregate_rating}`);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "user-key",
+						"value": "{{Zomato API Key}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://developers.zomato.com/api/v2.1/search?city_id={{city_id}}&lat={{latitude}}&lon={{longitude}}&establishment_id={{establishment_type_id}}&cuisines={{cuisine_id}}&radius=500&sort=real_distance&order=asc&start=0&count=20",
+					"protocol": "https",
+					"host": [
+						"developers",
+						"zomato",
+						"com"
+					],
+					"path": [
+						"api",
+						"v2.1",
+						"search"
+					],
+					"query": [
+						{
+							"key": "city_id",
+							"value": "{{city_id}}"
+						},
+						{
+							"key": "lat",
+							"value": "{{latitude}}"
+						},
+						{
+							"key": "lon",
+							"value": "{{longitude}}"
+						},
+						{
+							"key": "establishment_id",
+							"value": "{{establishment_type_id}}"
+						},
+						{
+							"key": "cuisines",
+							"value": "{{cuisine_id}}"
+						},
+						{
+							"key": "radius",
+							"value": "500"
+						},
+						{
+							"key": "sort",
+							"value": "real_distance"
+						},
+						{
+							"key": "order",
+							"value": "asc"
+						},
+						{
+							"key": "start",
+							"value": "0"
+						},
+						{
+							"key": "count",
+							"value": "20"
+						}
+					]
+				},
+				"description": "This request pools in everything that has been searched in the previous requests and searches the restaurants/ eateries that satisfy user's requirement of establishment type and cuisine."
+			},
+			"response": []
+		}
+	]
+}
